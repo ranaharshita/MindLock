@@ -57,7 +57,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('loginForm').classList.add('hidden');
   document.getElementById('signupForm').classList.add('hidden');
-
+  
   if (tab === 'login') {
     document.querySelectorAll('.tab-btn')[0].classList.add('active');
     document.getElementById('loginForm').classList.remove('hidden');
@@ -67,45 +67,95 @@ function switchTab(tab) {
   }
 }
 
-function login() {
-  const username = document.getElementById('loginUsername').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const err = document.getElementById('loginError');
+async function login() {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const err = document.getElementById("loginError");
 
-  if (!username || !password) { err.textContent = 'Please fill in all fields.'; return; }
+  if (!username || !password) {
+    err.textContent = "Please fill in all fields.";
+    return;
+  }
 
-  const users = JSON.parse(localStorage.getItem('ml_users') || '{}');
-  if (!users[username]) { err.textContent = 'Username not found.'; return; }
-  if (users[username] !== password) { err.textContent = 'Wrong password.'; return; }
+  try {
+    const response = await fetch("http://13.201.104.168:5000/api/users/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username,
+        password
+      })
+    });
 
-  err.textContent = '';
-  currentUser = username;
-  localStorage.setItem('ml_currentUser', username);
-  loadDashboard();
+    const data = await response.json();
+
+    if (data.success) {
+      err.textContent = "";
+      currentUser = username;
+      localStorage.setItem("ml_currentUser", username);
+
+      // Create local progress if first login
+      if (!localStorage.getItem("ml_" + username)) {
+        saveState(defaultState());
+      }
+
+      loadDashboard();
+    } else {
+      err.textContent = data.message;
+    }
+
+  } catch (e) {
+    err.textContent = "Could not reach server.";
+    console.error(e);
+  }
 }
+async function signup() {
+  const username = document.getElementById("signupUsername").value.trim();
+  const password = document.getElementById("signupPassword").value;
+  const confirm = document.getElementById("signupConfirm").value;
+  const err = document.getElementById("signupError");
 
-function signup() {
-  const username = document.getElementById('signupUsername').value.trim();
-  const password = document.getElementById('signupPassword').value;
-  const confirm = document.getElementById('signupConfirm').value;
-  const err = document.getElementById('signupError');
+  if (!username || !password) {
+    err.textContent = "Please fill in all fields.";
+    return;
+  }
 
-  if (!username || !password) { err.textContent = 'Please fill in all fields.'; return; }
-  if (password.length < 4) { err.textContent = 'Password must be at least 4 chars.'; return; }
-  if (password !== confirm) { err.textContent = 'Passwords do not match.'; return; }
+  if (password !== confirm) {
+    err.textContent = "Passwords do not match.";
+    return;
+  }
 
-  const users = JSON.parse(localStorage.getItem('ml_users') || '{}');
-  if (users[username]) { err.textContent = 'Username already taken.'; return; }
+  try {
+    const response = await fetch("http://13.201.104.168:5000/api/users/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username,
+        password
+      })
+    });
 
-  users[username] = password;
-  localStorage.setItem('ml_users', JSON.stringify(users));
+    const data = await response.json();
 
-  // Init state for new user
-  currentUser = username;
-  saveState(defaultState());
-  localStorage.setItem('ml_currentUser', username);
-  err.textContent = '';
-  loadDashboard();
+    if (data.success) {
+      currentUser = username;
+      localStorage.setItem("ml_currentUser", username);
+
+      saveState(defaultState());
+
+      loadDashboard();
+    } else {
+      err.textContent = data.message;
+    }
+
+  } catch (e) {
+    err.textContent = "Could not reach server.";
+    console.error(e);
+  }
 }
 
 function logout() {
@@ -618,7 +668,7 @@ async function sendChat() {
   input.value = '';
 
   try {
-    const response = await fetch("http://localhost:5000/api/ai/chat", {
+    const response = await fetch("http://13.201.104.168:5000/api/ai/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -876,9 +926,3 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Testing backend connection
-fetch("http://localhost:5000/api/users/hello")
-  .then(res => res.json())
-  .then(data => {
-    console.log(data);
-  })
-  .catch(err => console.error(err));

@@ -833,7 +833,7 @@ function getLvl(pts) {
 // AUTH
 // =========================================
 // Backend base URL — change this if your Express server runs elsewhere.
-const API_BASE = 'http://localhost:5000/api/users';
+const API_BASE = 'http://13.201.104.168:5000/api/users';
 
 function switchTab(tab) {
   document.getElementById('loginForm').style.display  = tab==='login'  ? 'block' : 'none';
@@ -1733,7 +1733,7 @@ async function sendMsg() {
   input.value = '';
 
   try {
-    const response = await fetch("http://localhost:5000/api/ai/chat", {
+    const response = await fetch("http://13.201.104.168:5000/api/ai/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
